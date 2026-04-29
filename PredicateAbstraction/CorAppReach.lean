@@ -1,0 +1,9 @@
+import PredicateAbstraction.Defs
+
+namespace PredicateAbstraction
+namespace CTMCFormalization
+
+abbrev reachability_error_bound_generators := @reachability_error_bound_generators_core
+
+end CTMCFormalization
+end PredicateAbstraction

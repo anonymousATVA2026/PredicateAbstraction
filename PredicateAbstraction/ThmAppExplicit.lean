@@ -1,0 +1,10 @@
+import PredicateAbstraction.Defs
+
+namespace PredicateAbstraction
+namespace CTMCFormalization
+
+abbrev explicit_reachability_error_bound_from_variation_ratio_sign_coherent :=
+  @explicit_reachability_error_bound_from_variation_ratio_sign_coherent_core
+
+end CTMCFormalization
+end PredicateAbstraction

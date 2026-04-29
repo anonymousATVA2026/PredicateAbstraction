@@ -1,0 +1,9 @@
+import PredicateAbstraction.Defs
+
+namespace PredicateAbstraction
+namespace PaperProofs
+
+abbrev errorBoundNonUniformEntry_supNorm := @errorBoundNonUniformEntry_supNorm_core
+
+end PaperProofs
+end PredicateAbstraction

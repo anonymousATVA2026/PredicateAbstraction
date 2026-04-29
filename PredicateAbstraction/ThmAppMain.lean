@@ -1,0 +1,9 @@
+import PredicateAbstraction.Defs
+
+namespace PredicateAbstraction
+namespace CTMCFormalization
+
+abbrev continuous_time_error_bound_generators := @continuous_time_error_bound_generators_core
+
+end CTMCFormalization
+end PredicateAbstraction

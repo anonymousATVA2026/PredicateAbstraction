@@ -1,0 +1,9 @@
+import PredicateAbstraction.Defs
+
+namespace PredicateAbstraction
+namespace CTMCFormalization
+
+abbrev poissonPMFReal_firstMoment_tsum := @poissonPMFReal_firstMoment_tsum_core
+
+end CTMCFormalization
+end PredicateAbstraction

@@ -1,0 +1,9 @@
+import PredicateAbstraction.Defs
+
+namespace PredicateAbstraction
+namespace PaperProofs
+
+abbrev deviationBoundFromVariationRatio := @deviationBoundFromVariationRatio_core
+
+end PaperProofs
+end PredicateAbstraction

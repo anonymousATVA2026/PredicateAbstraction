@@ -1,0 +1,9 @@
+import PredicateAbstraction.Defs
+
+namespace PredicateAbstraction
+namespace CTMCFormalization
+
+abbrev weighted_nStep_error_bound := @weighted_nStep_error_bound_core
+
+end CTMCFormalization
+end PredicateAbstraction
