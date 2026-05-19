@@ -8,7 +8,13 @@ open Finset
 
 variable {α ι : Type*}
 
-/-- Error-bounded termination inequality from Theorem 6. -/
+/-- Error-bounded termination: given the explicit reachability bound
+`|err| ≤ 2T·r_max·(V-1)/V` (Theorem~\ref{thm:reach-error}, explicit form, as used in
+`app:proof-termination`), and the variation-ratio constraint `V ≤ 2T·r_max/(2T·r_max - ε)`,
+the abstraction satisfies `|err| ≤ ε`. The explicit bound enters as a hypothesis here because
+its derivation requires the structural assumptions of the appendix; see
+`CorAppReach.lean` (`reachability_error_bound_explicit_variation_ratio`) for the chained CTMC
+form. -/
 theorem errorBoundedTermination
     (ε T rmax V err : ℝ)
     (_hε : 0 < ε)

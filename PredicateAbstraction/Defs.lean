@@ -192,6 +192,196 @@ theorem deviationBoundFromVariationRatio_core
     |x - xhat| ≤ rmax - rmin := habs
     _ = rmax * (V - 1) / V := hEq
 
+/-- Temporal preservation: under uniform entry on `I`, the expected residence time
+`∑ p(x)·1/r(x)` equals `1/rHat` where `rHat` is the harmonic-mean rate. -/
+theorem harmonicMean_temporalPreservation_core
+    (I : Finset α) (hI : I.Nonempty) (r p : α → ℝ)
+    (hr : ∀ x ∈ I, 0 < r x)
+    (hp : ∀ x ∈ I, p x = 1 / (I.card : ℝ)) :
+    let avgInv := (1 / (I.card : ℝ)) * (∑ x ∈ I, (1 / r x))
+    let rHat : ℝ := avgInv⁻¹
+    (∑ x ∈ I, p x * (1 / r x)) = 1 / rHat := by
+  intro avgInv rHat
+  have h1 :
+      (∑ x ∈ I, p x * (1 / r x)) = avgInv :=
+    expectedResidence_uniform (I := I) (p := p) (r := r) hp
+  have h2 : (1 / rHat) = avgInv :=
+    harmonicMeanAggregation_core (I := I) (hI := hI) (r := r) hr
+  rw [h1, h2]
+
+/-- Lower bound on the harmonic mean: if every `r x` lies in `[rmin, rmax]` with `rmin > 0`,
+then so does `rHat := ((1/|I|)·∑ 1/r x)⁻¹`. -/
+theorem harmonicMean_in_interval_core
+    (I : Finset α) (hI : I.Nonempty) (r : α → ℝ) (rmin rmax : ℝ)
+    (hrmin_pos : 0 < rmin)
+    (hr_lower : ∀ x ∈ I, rmin ≤ r x)
+    (hr_upper : ∀ x ∈ I, r x ≤ rmax) :
+    let avgInv := (1 / (I.card : ℝ)) * (∑ x ∈ I, (1 / r x))
+    let rHat : ℝ := avgInv⁻¹
+    rmin ≤ rHat ∧ rHat ≤ rmax := by
+  intro avgInv rHat
+  have hcard_pos : 0 < (I.card : ℝ) := Nat.cast_pos.mpr hI.card_pos
+  have hrx_pos : ∀ x ∈ I, 0 < r x := fun x hx => lt_of_lt_of_le hrmin_pos (hr_lower x hx)
+  have hrmax_pos : 0 < rmax := by
+    rcases hI with ⟨x, hx⟩
+    exact lt_of_lt_of_le (hrx_pos x hx) (hr_upper x hx)
+  -- Pointwise bounds on 1/r x.
+  have hinv_lower : ∀ x ∈ I, 1 / rmax ≤ 1 / r x := fun x hx =>
+    one_div_le_one_div_of_le (hrx_pos x hx) (hr_upper x hx)
+  have hinv_upper : ∀ x ∈ I, 1 / r x ≤ 1 / rmin := fun x hx =>
+    one_div_le_one_div_of_le hrmin_pos (hr_lower x hx)
+  -- Sum bounds on ∑ 1/r x.
+  have hsum_lower : ((I.card : ℝ)) * (1 / rmax) ≤ ∑ x ∈ I, 1 / r x := by
+    calc ((I.card : ℝ)) * (1 / rmax)
+        = ∑ _x ∈ I, (1 / rmax) := by
+          simp [mul_comm]
+      _ ≤ ∑ x ∈ I, 1 / r x :=
+          Finset.sum_le_sum (fun x hx => hinv_lower x hx)
+  have hsum_upper : (∑ x ∈ I, 1 / r x) ≤ ((I.card : ℝ)) * (1 / rmin) := by
+    calc (∑ x ∈ I, 1 / r x)
+        ≤ ∑ _x ∈ I, (1 / rmin) :=
+          Finset.sum_le_sum (fun x hx => hinv_upper x hx)
+      _ = ((I.card : ℝ)) * (1 / rmin) := by simp [mul_comm]
+  -- avgInv bounds.
+  have havgInv_lower : 1 / rmax ≤ avgInv := by
+    dsimp [avgInv]
+    have := mul_le_mul_of_nonneg_left hsum_lower
+      (le_of_lt (one_div_pos.mpr hcard_pos))
+    have hsimpl : (1 / (I.card : ℝ)) * ((I.card : ℝ) * (1 / rmax)) = 1 / rmax := by
+      field_simp
+    linarith
+  have havgInv_upper : avgInv ≤ 1 / rmin := by
+    dsimp [avgInv]
+    have := mul_le_mul_of_nonneg_left hsum_upper
+      (le_of_lt (one_div_pos.mpr hcard_pos))
+    have hsimpl : (1 / (I.card : ℝ)) * ((I.card : ℝ) * (1 / rmin)) = 1 / rmin := by
+      field_simp
+    linarith
+  have havg_pos : 0 < avgInv :=
+    lt_of_lt_of_le (one_div_pos.mpr hrmax_pos) havgInv_lower
+  -- Translate to rHat = avgInv⁻¹.
+  refine ⟨?_, ?_⟩
+  · -- rmin ≤ rHat: from avgInv ≤ 1/rmin take reciprocals.
+    have : 1 / (1 / rmin) ≤ 1 / avgInv :=
+      one_div_le_one_div_of_le havg_pos havgInv_upper
+    have hrec : (1 / rmin)⁻¹ = rmin := by field_simp
+    have hAvg : (1 / avgInv) = avgInv⁻¹ := by simp [one_div]
+    have hRecAlt : (1 / (1 / rmin)) = rmin := by field_simp
+    -- Conclude.
+    simpa [rHat, hRecAlt, hAvg] using this
+  · -- rHat ≤ rmax: from 1/rmax ≤ avgInv take reciprocals.
+    have hrmax_inv_pos : 0 < 1 / rmax := one_div_pos.mpr hrmax_pos
+    have : 1 / avgInv ≤ 1 / (1 / rmax) :=
+      one_div_le_one_div_of_le hrmax_inv_pos havgInv_lower
+    have hAvg : (1 / avgInv) = avgInv⁻¹ := by simp [one_div]
+    have hRecAlt : (1 / (1 / rmax)) = rmax := by field_simp
+    simpa [rHat, hRecAlt, hAvg] using this
+
+/-- Single-variable total error bound using `deviationNorm = ‖δ‖∞` per region.
+The sum on the right-hand side ranges over `J.attach`, which gives access to the membership
+proof `j.property : j.val ∈ J` needed to apply `deviationNorm`. -/
+theorem singleVariableTotalErrorBound_supNorm_core
+    (J : Finset ι) (I : ι → Finset α) (hI : ∀ j ∈ J, (I j).Nonempty)
+    (δ : ι → α → ℝ) (r : α → ℝ)
+    (rmin : ι → ℝ)
+    (hrmin : ∀ j ∈ J, 0 < rmin j)
+    (hr_lower : ∀ j ∈ J, ∀ x ∈ I j, rmin j ≤ r x) :
+    let totalErr : ℝ := ∑ j ∈ J, ∑ x ∈ I j, δ j x * (1 / r x)
+    |totalErr| ≤ ∑ j ∈ J.attach,
+      deviationNorm (I j.val) (hI j.val j.property) (δ j.val)
+        * ((I j.val).card : ℝ) / rmin j.val := by
+  intro totalErr
+  -- Apply the per-interval supNorm bound and aggregate.
+  have hinner :
+      ∀ j ∈ J.attach,
+        |∑ x ∈ I j.val, δ j.val x * (1 / r x)|
+          ≤ deviationNorm (I j.val) (hI j.val j.property) (δ j.val)
+              * ((I j.val).card : ℝ) / rmin j.val := by
+    intro j hj
+    have := errorBoundNonUniformEntry_supNorm_core
+      (I := I j.val) (hI := hI j.val j.property)
+      (δ := δ j.val) (r := r) (rmin := rmin j.val)
+      (hrmin j.val j.property) (hr_lower j.val j.property)
+    simpa using this
+  have hsum_eq :
+      (∑ j ∈ J, ∑ x ∈ I j, δ j x * (1 / r x))
+        = ∑ j ∈ J.attach, ∑ x ∈ I j.val, δ j.val x * (1 / r x) := by
+    rw [← Finset.sum_attach (s := J) (f := fun j => ∑ x ∈ I j, δ j x * (1 / r x))]
+  calc
+    |totalErr|
+        = |∑ j ∈ J.attach, ∑ x ∈ I j.val, δ j.val x * (1 / r x)| := by
+          show |∑ j ∈ J, ∑ x ∈ I j, δ j x * (1 / r x)| = _
+          rw [hsum_eq]
+    _ ≤ ∑ j ∈ J.attach, |∑ x ∈ I j.val, δ j.val x * (1 / r x)| := by
+          simpa using
+            (abs_sum_le_sum_abs (s := J.attach)
+              (f := fun j => ∑ x ∈ I j.val, δ j.val x * (1 / r x)))
+    _ ≤ ∑ j ∈ J.attach,
+          deviationNorm (I j.val) (hI j.val j.property) (δ j.val)
+            * ((I j.val).card : ℝ) / rmin j.val :=
+          Finset.sum_le_sum hinner
+
+/-- Multivariate total error bound using `deviationNorm = ‖δ‖∞` per region. -/
+theorem multivariateTotalErrorBound_supNorm_core
+    (Regions : Finset ι) (cells : ι → Finset α)
+    (hCells : ∀ c ∈ Regions, (cells c).Nonempty)
+    (δ : ι → α → ℝ) (exitRate : α → ℝ)
+    (rmin : ι → ℝ)
+    (hrmin : ∀ c ∈ Regions, 0 < rmin c)
+    (hr_lower : ∀ c ∈ Regions, ∀ x ∈ cells c, rmin c ≤ exitRate x) :
+    let totalErr : ℝ := ∑ c ∈ Regions, ∑ x ∈ cells c, δ c x * (1 / exitRate x)
+    |totalErr| ≤ ∑ c ∈ Regions.attach,
+      deviationNorm (cells c.val) (hCells c.val c.property) (δ c.val)
+        * ((cells c.val).card : ℝ) / rmin c.val := by
+  intro totalErr
+  exact singleVariableTotalErrorBound_supNorm_core
+    (J := Regions) (I := cells) (hI := hCells) (δ := δ) (r := exitRate)
+    (rmin := rmin) hrmin hr_lower
+
+/-- Variation–error correspondence: derive the error bound from `errorBoundNonUniformEntry`
+and reformulate via the variation ratio `V = rmax / rmin`. -/
+theorem variationErrorCorrespondence_fromErrorBound_core
+    (I : Finset α) (hI : I.Nonempty) (δ r : α → ℝ) (rmin rmax V : ℝ)
+    (hrmin : 0 < rmin) (hrmax : 0 < rmax)
+    (hr_lower : ∀ x ∈ I, rmin ≤ r x)
+    (hV : V = rmax / rmin) :
+    let err : ℝ := ∑ x ∈ I, δ x * (1 / r x)
+    |err| ≤ deviationNorm I hI δ * ((I.card : ℝ)) * V / rmax := by
+  intro err
+  have hbase :
+      |err| ≤ deviationNorm I hI δ * (I.card : ℝ) / rmin :=
+    errorBoundNonUniformEntry_supNorm_core (I := I) (hI := hI) (δ := δ) (r := r)
+      (rmin := rmin) hrmin hr_lower
+  exact variationErrorCorrespondence_core
+    (err := err)
+    (δInf := deviationNorm I hI δ)
+    (regionSize := (I.card : ℝ))
+    (rmax := rmax) (rmin := rmin) (V := V)
+    hbase hV hrmin hrmax
+
+/-- Specialization of `deviationBoundFromVariationRatio_core` to the case where one of the
+two values is the harmonic mean of `r` on `I` (which lies in `[rmin, rmax]` by
+`harmonicMean_in_interval_core`). -/
+theorem harmonicMean_deviationBound_core
+    (I : Finset α) (hI : I.Nonempty) (r : α → ℝ) (x rmin rmax V : ℝ)
+    (hrmin : 0 < rmin)
+    (hr_lower : ∀ y ∈ I, rmin ≤ r y)
+    (hr_upper : ∀ y ∈ I, r y ≤ rmax)
+    (hx_lower : rmin ≤ x)
+    (hx_upper : x ≤ rmax)
+    (hV : V = rmax / rmin) :
+    let avgInv := (1 / (I.card : ℝ)) * (∑ y ∈ I, (1 / r y))
+    let rHat : ℝ := avgInv⁻¹
+    |x - rHat| ≤ rmax * (V - 1) / V := by
+  intro avgInv rHat
+  obtain ⟨hrHat_lower, hrHat_upper⟩ :=
+    harmonicMean_in_interval_core (I := I) (hI := hI) (r := r)
+      (rmin := rmin) (rmax := rmax) hrmin hr_lower hr_upper
+  exact deviationBoundFromVariationRatio_core
+    (x := x) (xhat := rHat)
+    (rmin := rmin) (rmax := rmax) (V := V)
+    hx_lower hx_upper hrHat_lower hrHat_upper hrmin hV
+
 /-- Error-bounded termination inequality from Theorem 6. -/
 theorem errorBoundedTermination_core
     (ε T rmax V err : ℝ)
